@@ -11,6 +11,7 @@ Library location, in order of precedence:
 
     $CLAUDE_SOPS_DIR
     ~/.claude-plugins/claude-sops/config.json  ->  {"library": "..."}
+    $CLAUDE_USER_DATA/sops
     ~/.claude-user-data/sops
 
 SOP files sit directly in that folder, one per procedure — open it and you see
@@ -44,8 +45,7 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 VAULT = Path.home() / ".claude-plugins" / "claude-sops"
 CONFIG = VAULT / "config.json"
-USER_DATA = Path.home() / ".claude-user-data"
-DEFAULT_LIBRARY = USER_DATA / "sops"
+DEFAULT_USER_DATA = Path.home() / ".claude-user-data"
 
 # Filenames in the library that are never SOPs.
 RESERVED = {"INDEX.md", "README.md"}
@@ -73,6 +73,14 @@ def read_config() -> dict:
     return {}
 
 
+def user_data_root() -> Path:
+    """Root for user content. $CLAUDE_USER_DATA is the shared cross-plugin
+    override; the default is a readable folder in $HOME rather than an XDG
+    data directory, because this content is meant to be browsed by hand."""
+    env = os.environ.get("CLAUDE_USER_DATA")
+    return Path(env).expanduser() if env else DEFAULT_USER_DATA
+
+
 def library_path() -> Path:
     env = os.environ.get("CLAUDE_SOPS_DIR")
     if env:
@@ -80,7 +88,7 @@ def library_path() -> Path:
     configured = read_config().get("library")
     if configured:
         return Path(configured).expanduser()
-    return DEFAULT_LIBRARY
+    return user_data_root() / "sops"
 
 
 def sop_files(lib: Path) -> list[Path]:

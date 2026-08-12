@@ -42,7 +42,8 @@ Resolution order for the library path, highest first:
 
 1. `$CLAUDE_SOPS_DIR`
 2. `library` in `~/.claude-plugins/claude-sops/config.json`
-3. `~/.claude-user-data/sops`
+3. `$CLAUDE_USER_DATA/sops` — the shared cross-plugin root, if set
+4. `~/.claude-user-data/sops`
 
 `python3 scripts/sop.py path` prints the winner. Use it rather than assuming —
 on a machine where the user keeps the library somewhere else, a hardcoded

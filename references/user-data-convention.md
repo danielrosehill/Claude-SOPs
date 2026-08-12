@@ -11,6 +11,19 @@ For this plugin that is `~/.claude-user-data/sops/`, holding one markdown file
 per procedure. Not a database, not a nested tree, not a serialised blob — files
 you can open in any editor, read without Claude running, grep, and edit by hand.
 
+The root honours `$CLAUDE_USER_DATA` if it is set, so a machine that already
+points other plugins somewhere keeps everything together:
+
+```
+${CLAUDE_USER_DATA:-$HOME/.claude-user-data}/<tool>/
+```
+
+Note the default differs from the older resolver some plugins use
+(`${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins`). That path is
+XDG-correct and effectively invisible — nobody browses `~/.local/share` — which
+is the opposite of the goal here. Setting `$CLAUDE_USER_DATA` reconciles the two
+in one place.
+
 ## The rule that decides the folder
 
 Two kinds of thing get written outside a plugin, and they want opposite
