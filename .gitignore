@@ -1,0 +1,11 @@
+# Nobody's actual SOPs belong in this repo. The library lives outside it —
+# see references/library-layout.md. These patterns are a backstop, not the
+# mechanism.
+sops/
+INDEX.md
+config.json
+.claude-sops
+
+__pycache__/
+*.pyc
+.venv/
