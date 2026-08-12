@@ -33,17 +33,23 @@ real hosts, repos, accounts and people, and are not shareable.
 One pointer, one index, one file read.
 
 ```
-~/.claude/CLAUDE.md          one block: "recurring procedures live in ~/claude-sops"
+~/.claude/CLAUDE.md                one block: "recurring procedures live in ~/.claude-user-data/sops"
         │
         ▼
-~/claude-sops/INDEX.md       a generated table: id, title, "use when", verified date
+~/.claude-user-data/sops/INDEX.md  a generated table: id, title, "use when", verified date
         │
         ▼
-~/claude-sops/sops/<id>.md   exactly one procedure, read only once it matched
+~/.claude-user-data/sops/<id>.md   exactly one procedure, read only once it matched
 ```
 
 Adding the fortieth SOP costs one row in a table. That is the whole design, and
 everything else here follows from it.
+
+The library is a **flat folder of readable markdown files**, one per procedure,
+under `~/.claude-user-data/` — the convention this plugin uses for user content
+that belongs to you rather than to the tool. Open it in any editor, read it
+without Claude, grep it, edit it by hand. See
+[`references/user-data-convention.md`](references/user-data-convention.md).
 
 ## Install
 
@@ -61,7 +67,7 @@ Then:
 /sop setup
 ```
 
-which creates `~/claude-sops`, makes it a git repo, offers to push it to a
+which creates `~/.claude-user-data/sops`, makes it a git repo, offers to push it to a
 **private** GitHub repo so it mirrors across your machines, and adds a single
 delimited block to your user-level `CLAUDE.md` — showing you the block and
 asking first, because that file governs every future session.
@@ -124,17 +130,29 @@ examples: [`examples/`](examples/).
 | | Path | Lifecycle | Privacy |
 | --- | --- | --- | --- |
 | Plugin | wherever Claude Code installed it | replaced on `/plugin update` | public |
-| Library | `~/claude-sops` (configurable) | your git repo, diverges forever | **private** |
-| Vault | `~/.claude-plugins/claude-sops/` | survives updates, committed nowhere | local |
+| Library | `~/.claude-user-data/sops/` (configurable) | your git repo, diverges forever | **private** |
+| Vault | `~/.claude-plugins/claude-sops/` | survives updates, committed nowhere | local, never synced |
 
-Nothing is ever written into the plugin directory at run time — that works until
-the first update and then loses data silently. Details, and how to move the
-library: [`references/library-layout.md`](references/library-layout.md).
+```
+~/.claude-user-data/           private git repo, mirrored across your machines
+└── sops/
+    ├── INDEX.md               generated
+    ├── README.md
+    ├── deploy-the-site.md     one procedure, one file
+    ├── close-the-month.md
+    └── archive/               retired procedures
+```
+
+`INDEX.md` and `README.md` are reserved names; everything else ending in `.md`
+is a procedure. Nothing is ever written into the plugin directory at run time —
+that works until the first update and then loses data silently. Details, and how
+to move the library: [`references/library-layout.md`](references/library-layout.md).
 
 ## Tooling
 
 ```bash
 python3 scripts/sop.py path        # where is the library
+python3 scripts/sop.py repo        # which git repo it sits in
 python3 scripts/sop.py list        # what is in it
 python3 scripts/sop.py new <id> --title "…"
 python3 scripts/sop.py index       # regenerate INDEX.md

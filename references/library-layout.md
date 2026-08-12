@@ -6,47 +6,54 @@ predictable way, so the split is worth knowing before writing anything.
 | | Path | Lifecycle | Privacy |
 | --- | --- | --- | --- |
 | **Plugin** | wherever Claude Code installed it | replaced wholesale on `/plugin update` | public |
-| **Library** | `~/claude-sops` (configurable) | a git repo you own; diverges forever | private |
-| **Vault** | `~/.claude-plugins/claude-sops/` | survives updates, committed nowhere | local |
+| **Library** | `~/.claude-user-data/sops/` (configurable) | inside a git repo you own; diverges forever | private |
+| **Vault** | `~/.claude-plugins/claude-sops/` | survives updates, committed nowhere | local, never synced |
 
 **Never write into the plugin directory at run time.** It works until the first
 update and then loses the data silently.
 
+The user-content / machine-config split, and why the root is
+`~/.claude-user-data/`: [`user-data-convention.md`](user-data-convention.md).
+
 ## The library
 
 ```
-~/claude-sops/
-├── INDEX.md          generated — the only file read by default
-├── README.md         from templates/library-README.md at init
-├── sops/
-│   ├── deploy-the-site.md
-│   └── close-the-month.md
-└── archive/
-    └── 2026-03-04-old-deploy.md
+~/.claude-user-data/                 the git repo — private, mirrored
+└── sops/                            the library
+    ├── INDEX.md                     generated — the only file read by default
+    ├── README.md                    from templates/library-README.md at init
+    ├── deploy-the-site.md           one procedure, one file
+    ├── close-the-month.md
+    └── archive/
+        └── 2026-03-04-old-deploy.md
 ```
 
-Its own git repo, private, pushed to a remote so it can be cloned onto every
-machine that runs Claude Code. It is deliberately **not** inside `~/.claude`:
-that directory is frequently backed up or synced wholesale by other tooling, and
-a git repo nested inside a synced tree is a recurring source of confusing
-conflicts.
+**Flat and readable on purpose.** The files sit directly in the folder so that
+opening it in a file manager shows the procedures themselves. `INDEX.md` and
+`README.md` are therefore reserved names and can never be SOP ids; `sop.py`
+refuses them rather than shadowing the index.
 
-Resolution order for the path, highest first:
+**The repo root is a level up.** `~/.claude-user-data/` is the git repo and the
+library is a subfolder, so `git -C <library>` works but `git add -A` at the top
+would sweep in other tools' folders. Use `sop.py repo` to resolve the root and
+stage only the SOP paths.
+
+Resolution order for the library path, highest first:
 
 1. `$CLAUDE_SOPS_DIR`
 2. `library` in `~/.claude-plugins/claude-sops/config.json`
-3. `~/claude-sops`
+3. `~/.claude-user-data/sops`
 
 `python3 scripts/sop.py path` prints the winner. Use it rather than assuming —
 on a machine where the user keeps the library somewhere else, a hardcoded
-`~/claude-sops` silently creates a second, empty library.
+`~/.claude-user-data/sops` silently creates a second, empty library.
 
 ## The vault
 
 ```json
 {
-  "library": "~/claude-sops",
-  "repo": "<owner>/claude-sops",
+  "library": "~/.claude-user-data/sops",
+  "repo": "<owner>/claude-user-data",
   "remote": "github",
   "claude_md": "~/.claude/CLAUDE.md",
   "seeded": "2026-08-12"
@@ -70,8 +77,8 @@ rules for editing it: [`claude-md-snippet.md`](claude-md-snippet.md).
 
 ## Why the split exists
 
-The library could have been skills — one skill per procedure, in `~/.claude/skills/`.
-That fails on two counts.
+The library could have been skills — one skill per procedure, in
+`~/.claude/skills/`. That fails on two counts.
 
 **Context.** Every skill's name and description is loaded every session. Forty
 procedures is forty descriptions permanently resident, and most sessions use

@@ -17,9 +17,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" list --json
 Or read `INDEX.md` at the path from `sop.py path` — same content, and the table
 is easier to scan when reporting back to the user.
 
-**Do not glob `sops/` and read everything.** That defeats the entire design; a
-mature library is tens of files, and pulling them all in to answer one question
-is the cost this structure exists to avoid.
+**Do not glob the library folder and read everything.** That defeats the entire
+design; a mature library is tens of files, and pulling them all in to answer one
+question is the cost this structure exists to avoid.
 
 If there is no library, say so once and offer `sop-setup`. Do not improvise a
 folder.

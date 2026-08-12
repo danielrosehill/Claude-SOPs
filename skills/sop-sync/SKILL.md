@@ -11,21 +11,32 @@ that exists on one laptop is a note, not a system.
 
 ```bash
 LIB="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)"
+ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" repo)"
 ```
+
+**`$ROOT` is not `$LIB`.** The repo is `~/.claude-user-data` and the library is
+the `sops/` folder inside it, shared with whatever else follows the convention.
+`sop.py repo` exits 1 if there is no repo at all — that means `sop-setup` step 2
+was never done, not that something broke.
 
 ## Push
 
 ```bash
-git -C "$LIB" status --short
+git -C "$ROOT" status --short
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" index
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" validate
-git -C "$LIB" add -A
-git -C "$LIB" commit -m "<what changed>"
-git -C "$LIB" push
+git -C "$ROOT" add -- "$LIB"
+git -C "$ROOT" commit -m "<what changed>"
+git -C "$ROOT" push
 ```
 
+**Stage the library path, not `-A`.** A blanket add at the root sweeps in
+whatever another tool left half-finished in its own folder, under a commit
+message about SOPs. If `git status` shows changes outside `$LIB`, mention them
+and leave them alone.
+
 Reindex before committing, always. `INDEX.md` is generated, and a commit whose
-index disagrees with its `sops/` misroutes the dispatcher on the *other*
+index disagrees with the files beside it misroutes the dispatcher on the *other*
 machine, where nobody will connect the two.
 
 Write a real commit message — "Add SOP: close the month", not "update". The log
@@ -38,7 +49,7 @@ to every machine and is then found on the one where it is least convenient.
 ## Pull
 
 ```bash
-git -C "$LIB" pull --ff-only
+git -C "$ROOT" pull --ff-only
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" validate
 ```
 
@@ -54,9 +65,9 @@ Two shapes, one of them trivial:
 regenerate:
 
 ```bash
-git -C "$LIB" checkout --ours INDEX.md
+git -C "$ROOT" checkout --ours -- "$LIB/INDEX.md"
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" index
-git -C "$LIB" add INDEX.md
+git -C "$ROOT" add -- "$LIB/INDEX.md"
 ```
 
 **An SOP conflicts.** Show the user both versions of the conflicting section and
@@ -74,7 +85,7 @@ Perfectly normal, and local git alone is worth having. Offer the remote once,
 show the command, and do not ask again in the same session:
 
 ```bash
-gh repo create claude-sops --private --source="$LIB" --push
+gh repo create claude-user-data --private --source="$HOME/.claude-user-data" --push
 ```
 
 Private. The contents name real hosts, repos and accounts.

@@ -22,9 +22,9 @@ one on inference.
 
 Two things hold whichever route this takes:
 
-- **Read `INDEX.md`, then exactly one SOP.** Never read the whole `sops/`
-  directory to answer a question; the index carries the summary, and reading
-  past it is the cost this structure exists to avoid.
+- **Read `INDEX.md`, then exactly one SOP.** Never read the whole library folder
+  to answer a question; the index carries the summary, and reading past it is
+  the cost this structure exists to avoid.
 - **An SOP's `autonomy` field records a default, not a licence.** It never
   authorises something the user has declined in this session, and irreversible
   or outward-facing steps still get confirmed.

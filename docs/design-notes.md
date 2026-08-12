@@ -65,7 +65,7 @@ it should not be able to grant permissions by being written confidently.
 ## Why the index is generated
 
 Two failure modes were worth engineering out. A hand-maintained index drifts
-from `sops/` and the drift is invisible — the dispatcher silently stops finding
+from the files beside it and the drift is invisible — the dispatcher stops finding
 a procedure that is right there. And a hand-maintained index conflicts on every
 merge in a repo explicitly designed to be edited from several machines.
 
@@ -91,16 +91,36 @@ Consequence worth knowing: there is no upstream to sync a library from, so
 improvements to `templates/library-README.md` reach existing libraries only if
 someone copies them over. `sop.py init` never overwrites an existing README.
 
-## Why not `~/.claude/sops`
+## Why `~/.claude-user-data/sops/`, flat
 
-That directory is routinely backed up, synced or committed wholesale by other
-tooling. A git repo nested inside a synced tree produces conflicts that are
-tedious to diagnose and easy to blame on the wrong thing. `~/claude-sops` is a
-sibling, and the path is configurable in the vault for anyone who disagrees.
+Three constraints, and only one layout satisfies all of them.
 
-The name avoids a bare `~/sops`, which collides with
-[Mozilla SOPS](https://github.com/getsops/sops) in both muscle memory and
+**Not `~/.claude/sops`.** That tree is routinely backed up, synced or committed
+wholesale by other tooling. A git repo nested inside a synced tree produces
+conflicts that are tedious to diagnose and easy to blame on the wrong thing.
+
+**Not a bare `~/sops`.** It collides with
+[Mozilla SOPS](https://github.com/getsops/sops) in muscle memory and
 tab-completion.
+
+**Flat, not `sops/sops/`.** The first draft had the library root hold `INDEX.md`,
+`README.md` and a `sops/` subdirectory. That is tidier in the abstract and worse
+in practice: the point of markdown files over a database is that a person can
+open the folder and see their procedures, and an extra level of nesting between
+the folder you `cd` into and the files you want is friction for no gain at this
+size. The cost is two reserved filenames — `INDEX.md` and `README.md` cannot be
+SOP ids — which `sop.py` enforces at `new` rather than discovering at `index`.
+
+**One root for all user content.** `~/.claude-user-data/` is a single private
+repo, one subfolder per tool, so mirroring to another machine is one clone rather
+than a repo per tool with a remote each. Written up as a general convention in
+`references/user-data-convention.md`, because the next tool that needs to save
+something should not have to re-decide this.
+
+The consequence that catches tooling out: **the library folder is not the git
+repo root.** `git -C <library>` still works, but `git add -A` at the root would
+sweep in another tool's half-finished folder under a commit message about SOPs.
+Hence `sop.py repo`, and hence every skill staging `$LIB` explicitly.
 
 ## Why the CLAUDE.md block is delimited and backed up
 

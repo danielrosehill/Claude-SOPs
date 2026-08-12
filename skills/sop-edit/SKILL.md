@@ -58,8 +58,9 @@ out, if ruling it out cost time.
 - **`autonomy`** — a downgrade (`auto` → `confirm`) needs no discussion; make it.
   An upgrade needs the user to say so explicitly in this session. Do not infer
   "they never object" as consent.
-- **`id`** — a rename. Rename the file to match, update anything in `supersedes`
-  that points at it, reindex. `validate` will catch a half-done rename.
+- **`id`** — a rename. `git mv` the file to match (the filename *is* the id),
+  update anything in `supersedes` that points at it, reindex. `validate` will
+  catch a half-done rename.
 
 ## Splitting instead of growing
 
@@ -72,9 +73,12 @@ confidently. Split it, cross-link in `## Notes`, and put both ids in
 ## Finish
 
 ```bash
+LIB="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)"
+ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" repo)"
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" index
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" validate
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" commit -am "Update SOP: <id> — <what changed>"
+git -C "$ROOT" add -- "$LIB"
+git -C "$ROOT" commit -m "Update SOP: <id> — <what changed>"
 ```
 
 Reindex whenever front matter changed; `INDEX.md` is generated and a stale one

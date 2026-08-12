@@ -47,7 +47,8 @@ Only when the user asks for deletion specifically, and only after saying what is
 being lost.
 
 ```bash
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" rm sops/<id>.md
+LIB="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)"
+git -C "$LIB" rm "<id>.md"
 ```
 
 Use `git rm` rather than `rm` — the history keeps the content, which makes this
@@ -60,11 +61,15 @@ part of a retirement.
 ## Finish
 
 ```bash
+LIB="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)"
+ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" repo)"
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" index
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" validate
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" add -A
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" commit -m "Retire SOP: <id>"
+git -C "$ROOT" add -- "$LIB"
+git -C "$ROOT" commit -m "Retire SOP: <id>"
 ```
+
+Stage `$LIB`, not `-A` — the repo root holds other tools' folders too.
 
 `validate` after retiring catches the dangling reference — another SOP whose
 `supersedes` or `## Notes` points at the id that just left. Fix those in the

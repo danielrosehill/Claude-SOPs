@@ -6,7 +6,7 @@ plugin ever makes outside its own vault.
 
 ## The block
 
-Substitute the resolved library path for `~/claude-sops`.
+Substitute the resolved library path for `~/.claude-user-data/sops`.
 
 ```markdown
 <!-- claude-sops:begin -->
@@ -14,8 +14,8 @@ Substitute the resolved library path for `~/claude-sops`.
 
 ## Standard operating procedures
 
-Recurring procedures I have written down live in `~/claude-sops/`, indexed in
-`~/claude-sops/INDEX.md`.
+Recurring procedures I have written down live in `~/.claude-user-data/sops/`, indexed in
+`~/.claude-user-data/sops/INDEX.md`.
 
 Before improvising any multi-step procedure — publishing, deploying, filing,
 ordering, onboarding, closing a period — read `INDEX.md` and check the **Use

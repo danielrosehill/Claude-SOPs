@@ -88,9 +88,14 @@ Clear every finding — it exits non-zero for a reason.
 ## 5. Commit
 
 ```bash
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" add -A
-git -C "$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)" commit -m "Add SOP: <title>"
+LIB="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path)"
+ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" repo)"
+git -C "$ROOT" add -- "$LIB"
+git -C "$ROOT" commit -m "Add SOP: <title>"
 ```
+
+The git repo is `~/.claude-user-data`, a level above the library, and it holds
+other tools' folders — so stage `$LIB` rather than `-A`.
 
 Push with `sop-sync` if there is a remote. Then show the user the path and the
 `trigger` line — the trigger is the one field they should read back, because it

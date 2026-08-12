@@ -1,8 +1,12 @@
 # The SOP format
 
-One procedure, one file, `sops/<id>.md` in the library. Schema for the front
-matter: [`schema/sop.schema.json`](../schema/sop.schema.json). Blank starting
-point: [`templates/sop.template.md`](../templates/sop.template.md).
+One procedure, one file: `<id>.md`, directly in the library folder
+(`~/.claude-user-data/sops/` by default). The filename *is* the id, so the folder
+reads as a list of procedures. `INDEX.md` and `README.md` are reserved and can
+never be ids.
+
+Schema for the front matter: [`schema/sop.schema.json`](../schema/sop.schema.json).
+Blank starting point: [`templates/sop.template.md`](../templates/sop.template.md).
 
 ## Front matter is the interface
 

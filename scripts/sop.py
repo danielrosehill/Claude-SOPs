@@ -11,10 +11,15 @@ Library location, in order of precedence:
 
     $CLAUDE_SOPS_DIR
     ~/.claude-plugins/claude-sops/config.json  ->  {"library": "..."}
-    ~/claude-sops
+    ~/.claude-user-data/sops
+
+SOP files sit directly in that folder, one per procedure — open it and you see
+`foo.md`, not a nested tree. `INDEX.md` and `README.md` are reserved names and
+are never treated as SOPs; `archive/` holds retired ones.
 
 Usage:
     sop.py path                     print the resolved library path
+    sop.py repo                     print the enclosing git repo root, if any
     sop.py init [DIR]               scaffold a library (idempotent)
     sop.py list [--tag T] [--stale DAYS] [--json]
     sop.py show ID                  print one SOP verbatim
@@ -32,13 +37,18 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 VAULT = Path.home() / ".claude-plugins" / "claude-sops"
 CONFIG = VAULT / "config.json"
-DEFAULT_LIBRARY = Path.home() / "claude-sops"
+USER_DATA = Path.home() / ".claude-user-data"
+DEFAULT_LIBRARY = USER_DATA / "sops"
+
+# Filenames in the library that are never SOPs.
+RESERVED = {"INDEX.md", "README.md"}
 
 REQUIRED = ("id", "title", "trigger", "last_verified")
 AUTONOMY = ("auto", "confirm", "confirm-each", "manual")
@@ -73,8 +83,21 @@ def library_path() -> Path:
     return DEFAULT_LIBRARY
 
 
-def sops_dir(lib: Path) -> Path:
-    return lib / "sops"
+def sop_files(lib: Path) -> list[Path]:
+    """Every SOP in the library. Flat — one file per procedure, no nesting."""
+    return sorted(p for p in lib.glob("*.md") if p.name not in RESERVED)
+
+
+def repo_root(lib: Path) -> Path | None:
+    """The git repo the library sits in, which is often a level or more above it."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(lib), "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+    return Path(out) if out else None
 
 
 # --------------------------------------------------------------------------
@@ -125,11 +148,10 @@ def parse_front_matter(text: str) -> tuple[dict, str]:
 
 
 def load_sops(lib: Path) -> list[tuple[Path, dict, str]]:
-    d = sops_dir(lib)
-    if not d.is_dir():
+    if not lib.is_dir():
         die(f"no SOP library at {lib} — run `sop.py init` first")
     out = []
-    for path in sorted(d.glob("*.md")):
+    for path in sop_files(lib):
         fm, body = parse_front_matter(path.read_text(encoding="utf-8"))
         out.append((path, fm, body))
     return out
@@ -169,9 +191,16 @@ def cmd_path(args):
     print(library_path())
 
 
+def cmd_repo(args):
+    root = repo_root(library_path())
+    if root is None:
+        sys.exit(1)
+    print(root)
+
+
 def cmd_init(args):
     lib = Path(args.dir).expanduser() if args.dir else library_path()
-    sops_dir(lib).mkdir(parents=True, exist_ok=True)
+    lib.mkdir(parents=True, exist_ok=True)
     (lib / "archive").mkdir(exist_ok=True)
 
     readme = lib / "README.md"
@@ -191,7 +220,9 @@ def cmd_new(args):
     lib = library_path()
     if not ID_RE.match(args.id):
         die(f"id must be kebab-case: {args.id!r}")
-    target = sops_dir(lib) / f"{args.id}.md"
+    if f"{args.id}.md" in RESERVED or args.id in ("index", "readme", "archive"):
+        die(f"{args.id!r} is a reserved name in the library")
+    target = lib / f"{args.id}.md"
     if target.exists():
         die(f"{target} already exists — use sop.py show/edit instead")
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -216,9 +247,9 @@ def cmd_new(args):
 
 def cmd_show(args):
     lib = library_path()
-    path = sops_dir(lib) / f"{args.id}.md"
-    if not path.is_file():
-        die(f"no SOP with id {args.id!r} in {sops_dir(lib)}")
+    path = lib / f"{args.id}.md"
+    if not path.is_file() or path.name in RESERVED:
+        die(f"no SOP with id {args.id!r} in {lib}")
     sys.stdout.write(path.read_text(encoding="utf-8"))
 
 
@@ -248,7 +279,7 @@ def cmd_list(args):
         print(json.dumps(rows, indent=2, ensure_ascii=False))
         return
     if not rows:
-        print(f"(no SOPs in {sops_dir(lib)})")
+        print(f"(no SOPs in {lib})")
         return
     width = max(len(r["id"]) for r in rows)
     for r in rows:
@@ -258,9 +289,8 @@ def cmd_list(args):
 
 def write_index(lib: Path) -> Path:
     rows = []
-    d = sops_dir(lib)
-    d.mkdir(parents=True, exist_ok=True)
-    for path in sorted(d.glob("*.md")):
+    lib.mkdir(parents=True, exist_ok=True)
+    for path in sop_files(lib):
         fm, _ = parse_front_matter(path.read_text(encoding="utf-8"))
         rows.append(
             (
@@ -279,7 +309,7 @@ def write_index(lib: Path) -> Path:
         "# SOP index",
         "",
         f"{len(rows)} procedure(s). Read this file to choose one; read only the "
-        "chosen `sops/<id>.md` after that.",
+        "chosen `<id>.md` after that.",
         "",
         "| ID | Title | Use when | Tags | Autonomy | Verified |",
         "| --- | --- | --- | --- | --- | --- |",
@@ -292,7 +322,7 @@ def write_index(lib: Path) -> Path:
         if age is not None and age > 365:
             verified, stale = f"{r[5]} ⚠️", True
         out.append(
-            f"| [`{cells[0]}`](sops/{cells[0]}.md) | {cells[1]} | {cells[2]} | "
+            f"| [`{cells[0]}`]({cells[0]}.md) | {cells[1]} | {cells[2]} | "
             f"{cells[3]} | {cells[4]} | {verified} |"
         )
     if stale:
@@ -359,8 +389,8 @@ def cmd_validate(args):
 
 def cmd_retire(args):
     lib = library_path()
-    src = sops_dir(lib) / f"{args.id}.md"
-    if not src.is_file():
+    src = lib / f"{args.id}.md"
+    if not src.is_file() or src.name in RESERVED:
         die(f"no SOP with id {args.id!r}")
     archive = lib / "archive"
     archive.mkdir(exist_ok=True)
@@ -376,6 +406,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("path").set_defaults(func=cmd_path)
+    sub.add_parser("repo").set_defaults(func=cmd_repo)
 
     p = sub.add_parser("init")
     p.add_argument("dir", nargs="?")

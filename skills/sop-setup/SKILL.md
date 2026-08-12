@@ -14,28 +14,32 @@ folder should get only a folder.
 4. Add the pointer block to `~/.claude/CLAUDE.md`
 
 Layout and lifecycles: [`references/library-layout.md`](../../references/library-layout.md).
+Why the paths are what they are:
+[`references/user-data-convention.md`](../../references/user-data-convention.md).
 
 ## 0. Check whether one already exists
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" path
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" repo    # exits 1 if not in a repo
 ```
 
-If that directory has a `sops/` in it, there is already a library. Do not
-re-init — say what was found and ask what they actually wanted. The common real
-cases are *set it up on this second machine* (clone the existing repo, jump to
-step 3) and *move it* (below).
+If that directory exists and has `.md` files in it, there is already a library.
+Do not re-init — say what was found and ask what they actually wanted. The common
+real cases are *set it up on this second machine* (clone the repo, jump to step
+3) and *move it* (below).
 
 ## 1. Create it
 
-Default `~/claude-sops`. Ask before choosing something else only if they have
-already hinted at a preference; otherwise take the default and say so.
+Default `~/.claude-user-data/sops` — the convention for user content, one flat
+folder of readable markdown files. Ask before choosing something else only if
+they have already hinted at a preference; otherwise take the default and say so.
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sop.py" init
 ```
 
-That makes `sops/`, `archive/`, a `README.md` and an empty `INDEX.md`. It is
+That makes the folder, `archive/`, a `README.md` and an empty `INDEX.md`. It is
 idempotent and never overwrites an existing README.
 
 Do not put it inside `~/.claude`. That tree gets synced and backed up wholesale
@@ -44,21 +48,28 @@ tedious to unpick.
 
 ## 2. Version control
 
+**The repo is `~/.claude-user-data`, not the `sops/` folder inside it.** That
+root is the mirror point for every tool that follows the convention; a repo per
+subfolder means a remote and a push to remember for each one.
+
 Local git first — that alone gives history and is worth doing even if they never
 push:
 
 ```bash
-git -C ~/claude-sops init
-git -C ~/claude-sops add -A
-git -C ~/claude-sops commit -m "Start SOP library"
+git -C ~/.claude-user-data init
+git -C ~/.claude-user-data add -A
+git -C ~/.claude-user-data commit -m "Start SOP library"
 ```
+
+If `sop.py repo` already prints a path, the root is under git — skip the `init`
+and just commit.
 
 Then the remote, **if they want one**. This is what makes the collection mirror
 across machines, and it is also the step that creates something outward-facing —
 so show the exact command and get an explicit yes before running it:
 
 ```bash
-gh repo create claude-sops --private --source=/home/<user>/claude-sops --push
+gh repo create claude-user-data --private --source="$HOME/.claude-user-data" --push
 ```
 
 - **Private, always.** Real SOPs name real hosts, repos and accounts. If the user
@@ -71,7 +82,7 @@ gh repo create claude-sops --private --source=/home/<user>/claude-sops --push
 On a **second machine**, this step is instead:
 
 ```bash
-gh repo clone <owner>/claude-sops ~/claude-sops
+gh repo clone <owner>/claude-user-data ~/.claude-user-data
 ```
 
 ## 3. Record it in the vault
@@ -85,8 +96,8 @@ next skill's lookup unambiguous.
 
 ```json
 {
-  "library": "~/claude-sops",
-  "repo": "<owner>/claude-sops",
+  "library": "~/.claude-user-data/sops",
+  "repo": "<owner>/claude-user-data",
   "remote": "github",
   "claude_md": "~/.claude/CLAUDE.md",
   "seeded": "<YYYY-MM-DD>"
@@ -120,9 +131,13 @@ grep -c 'claude-sops:begin' ~/.claude/CLAUDE.md   # must be exactly 1
 ## Moving an existing library
 
 ```bash
-git -C ~/claude-sops remote -v          # confirm the remote first
-mv ~/claude-sops <new-path>
+git -C ~/.claude-user-data remote -v          # confirm the remote first
+git -C ~/.claude-user-data mv sops <new-path>
 ```
+
+Moving it *within* the repo is a `git mv`. Moving it out of the repo entirely
+means the new location needs its own git, and the old repo keeps the history —
+say which of the two is happening.
 
 Then update `library` in the vault, and update the path **in both places** in
 the `CLAUDE.md` block. A moved library with a stale snippet is the failure that
