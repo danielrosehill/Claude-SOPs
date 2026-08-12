@@ -171,6 +171,16 @@ it does not exempt irreversible or outward-facing steps from confirmation. It
 exists so that a wholly reversible procedure does not interrupt you six times,
 and so that one touching money or production interrupts you at every step.
 
+## Not to be confused with
+
+[`sop-writer`](https://github.com/danielrosehill/Claude-SOP-Writer-Plugin)
+authors SOP *documents* — project-scoped, with Mermaid diagrams, compiled to
+printable PDFs and assembled into binders for other people to read.
+
+This plugin holds procedures an **agent executes**: no rendering, no binder, and
+the audience is the assistant sitting in your terminal. If a procedure needs to
+be handed to a colleague on paper, that is the other one.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
