@@ -1,6 +1,6 @@
 {
-  "name": "claude-sops",
-  "version": "0.1.0",
+  "name": "sop-library",
+  "version": "0.2.0",
   "description": "Keep your own standard operating procedures as a versioned library of markdown files that Claude reads on demand. Ships the machinery — set up the library, write an SOP from a procedure you just worked out, edit one when reality moves, retire it, and mirror the collection across machines through a private git repo. Your CLAUDE.md gains one line pointing at the folder; the procedures themselves stay yours and stay out of context until the moment one is needed.",
   "author": {
     "name": "Daniel Rosehill",

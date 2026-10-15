@@ -55,7 +55,7 @@ without Claude, grep it, edit it by hand. See
 
 ```
 /plugin marketplace add danielrosehill/Claude-Code-Plugins
-/plugin install claude-sops
+/plugin install sop-library
 ```
 
 Or clone this repo and add it as a plugin directory. No dependencies — the
