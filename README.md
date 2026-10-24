@@ -1,3 +1,8 @@
+> **Archived 2026-10-24. Merged into [Agent-Habits](https://github.com/danielrosehill/Agent-Habits)** (plugin `habits`),
+> which handles both habits (rules) and SOPs (procedures) with one CLAUDE.md block. The SOP format, `sop.py` and the
+> `sop-*` skills carry over unchanged; the library is still `~/.claude-user-data/sops/`. Its installer converts an
+> existing `claude-sops` block. Config moved from `~/.claude-plugins/claude-sops/` to `~/.claude-plugins/habits/`.
+
 # Claude-SOPs
 
 A Claude Code plugin for keeping your own **standard operating procedures** — the
